@@ -22,8 +22,8 @@ public sealed class Plugin : IDalamudPlugin
     public Configuration Configuration { get; init; }
 
     public readonly WindowSystem WindowSystem = new("SamplePlugin");
-    private ConfigWindow ConfigWindow { get; init; }
-    private MainWindow MainWindow { get; init; }
+    public readonly RetroThemeManager ThemeManager = new();
+    private CRTMonitor MonitorWindow { get; init; }
 
     public Plugin()
     {
@@ -32,11 +32,9 @@ public sealed class Plugin : IDalamudPlugin
         // you might normally want to embed resources and load them from the manifest stream
         var goatImagePath = Path.Combine(PluginInterface.AssemblyLocation.Directory?.FullName!, "goat.png");
 
-        ConfigWindow = new ConfigWindow(this);
-        MainWindow = new MainWindow(this, goatImagePath);
+        MonitorWindow = new CRTMonitor(this, goatImagePath);
 
-        WindowSystem.AddWindow(ConfigWindow);
-        WindowSystem.AddWindow(MainWindow);
+        WindowSystem.AddWindow(MonitorWindow);
 
         CommandManager.AddHandler(CommandName, new CommandInfo(OnCommand)
         {
@@ -45,12 +43,15 @@ public sealed class Plugin : IDalamudPlugin
 
         PluginInterface.UiBuilder.Draw += DrawUI;
 
+        // Apply Windows 95 theme on startup
+        ThemeManager.ApplyTheme("Windows 95");
+
         // This adds a button to the plugin installer entry of this plugin which allows
-        // to toggle the display status of the configuration ui
-        PluginInterface.UiBuilder.OpenConfigUi += ToggleConfigUI;
+        // to toggle the display status of the monitor ui
+        PluginInterface.UiBuilder.OpenConfigUi += ToggleMonitorUI;
 
         // Adds another button that is doing the same but for the main ui of the plugin
-        PluginInterface.UiBuilder.OpenMainUi += ToggleMainUI;
+        PluginInterface.UiBuilder.OpenMainUi += ToggleMonitorUI;
 
         // Add a simple message to the log with level set to information
         // Use /xllog to open the log window in-game
@@ -62,20 +63,18 @@ public sealed class Plugin : IDalamudPlugin
     {
         WindowSystem.RemoveAllWindows();
 
-        ConfigWindow.Dispose();
-        MainWindow.Dispose();
+        MonitorWindow.Dispose();
 
         CommandManager.RemoveHandler(CommandName);
     }
 
     private void OnCommand(string command, string args)
     {
-        // in response to the slash command, just toggle the display status of our main ui
-        ToggleMainUI();
+        // in response to the slash command, open the Windows 95 CRT monitor
+        ToggleMonitorUI();
     }
 
     private void DrawUI() => WindowSystem.Draw();
 
-    public void ToggleConfigUI() => ConfigWindow.Toggle();
-    public void ToggleMainUI() => MainWindow.Toggle();
+    public void ToggleMonitorUI() => MonitorWindow.Toggle();
 }
